@@ -105,10 +105,10 @@ export default function Chat() {
           .eq('id', profile!.id)
         setProfile({ ...profile!, onboarding_completed: true })
       }
-    } catch {
+    } catch (err) {
       setMessages([...newMessages, {
         role: 'assistant',
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        content: err instanceof Error ? err.message : "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
       }])
     }
 

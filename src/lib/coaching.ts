@@ -87,13 +87,26 @@ export async function sendMessage(
 ): Promise<string> {
   const systemPrompt = buildSystemPrompt(profile, goals, isOnboarding)
 
-  const { data, error } = await supabase.functions.invoke('chat', {
-    body: {
-      messages,
-      systemPrompt,
-    },
-  })
+  const { data: { session } } = await supabase.auth.getSession()
 
-  if (error) throw new Error(error.message || 'Failed to get response')
+  const response = await fetch(
+    'https://drailjyobpnfjmjladpv.supabase.co/functions/v1/chat',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYWlsanlvYnBuZmptamxhZHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NTk4NDQsImV4cCI6MjA4NzQzNTg0NH0.Vt52KbihZ224KNXk87HlwSU3lDYkesIYZq3dWIGuJXs',
+        'Authorization': `Bearer ${session?.access_token || ''}`,
+      },
+      body: JSON.stringify({ messages, systemPrompt }),
+    }
+  )
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Edge function error (${response.status}): ${text}`)
+  }
+
+  const data = await response.json()
   return data.content
 }
